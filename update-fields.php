@@ -107,8 +107,8 @@ class UpdateFieldsCli extends JApplicationCli
 	 */
 	private function camelCase($string)
 	{
-		// Space out any already camel cased strings
-		$str = preg_replace('/([A-Z])/', ' $1', $string);
+		// Process any already camel cased strings, while avoiding all caps words/acronyms
+		$str = preg_replace('/^\b([A-Z])/', ' $1', $string);
 		// Make sure that all words are upper case, but other letters lower
 		$str = ucwords(strtolower($str));
 		// Remove any duplicate whitespace, and ensure all characters are alphanumeric
