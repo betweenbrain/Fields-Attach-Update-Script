@@ -107,8 +107,10 @@ class UpdateFieldsCli extends JApplicationCli
 	 */
 	private function camelCase($string)
 	{
+		// Space out any already camel cased strings
+		$str = preg_replace('/([A-Z])/', ' $1', $string);
 		// Make sure that all words are upper case, but other letters lower
-		$str = ucwords(strtolower($string));
+		$str = ucwords(strtolower($str));
 		// Remove any duplicate whitespace, and ensure all characters are alphanumeric
 		$str = preg_replace('/[^A-Za-z0-9]/', '', $str);
 		// Trim whitespace and lower case first String
@@ -127,18 +129,20 @@ class UpdateFieldsCli extends JApplicationCli
 	public function execute()
 	{
 
-		$this->out(JProfiler::getInstance('Application')->mark('Starting script.'));
+		if ($this->input->get('v'))
+		{
+			$this->out(JProfiler::getInstance('Application')->mark('Starting script.'));
+		}
 
-		/*
 		foreach ($this->csvfile as $row)
 		{
-			$this->saveItem($row);
+			$this->insertFieldsattachValues($row);
 		}
-		*/
 
-		$this->out(print_r($this->columnMap, true));
-
-		$this->out(JProfiler::getInstance('Application')->mark('Finished script.'));
+		if ($this->input->get('v'))
+		{
+			$this->out(JProfiler::getInstance('Application')->mark('Finished script.'));
+		}
 	}
 
 	/**
@@ -148,17 +152,17 @@ class UpdateFieldsCli extends JApplicationCli
 	 *
 	 * @return bool
 	 */
-	private function isDuplicate($item)
+	private function isDuplicate($row, $fieldId)
 	{
 		$query = $this->db->getQuery(true);
 		$query
 			->select($this->db->quoteName('id'))
 			->from($this->db->quoteName('#__fieldsattach_values'))
-			->where($this->db->quoteName('articleid') . ' = ' . $this->db->quote($item[$this->columnMap->articleId]))
-			->where($this->db->quoteName('fieldsid') . ' = ' . $this->db->quote($item[$this->columnMap->articleId]));
+			->where($this->db->quoteName('articleid') . ' = ' . $this->db->quote($row[$this->columnMap->articleId]))
+			->where($this->db->quoteName('fieldsid') . ' = ' . $this->db->quote($fieldId));
 		$this->db->setQuery($query);
 
-		return $this->db->loadResult() ? true : false;
+		return $this->db->loadResult() ? $this->db->loadResult() : false;
 	}
 
 	/**
@@ -166,17 +170,25 @@ class UpdateFieldsCli extends JApplicationCli
 	 *
 	 * @param $article
 	 */
-	private function insertFieldsattachValues($id, $item)
+	private function insertFieldsattachValues($row)
 	{
 		foreach ($this->fieldsMap as $fieldMap)
 		{
 			// Create and populate an object.
-			$field            = new stdClass();
-			$field->articleid = $id;
+			$field            = new stdClass;
+			$field->articleid = $row[$this->columnMap->articleId];
 			$field->fieldsid  = $fieldMap->fieldid;
-			$field->value     = $item[$this->columnMap->{$fieldMap->column}];
+			$field->value     = $row[$this->columnMap->{$fieldMap->column}];
 
-			$this->db->insertObject('#__fieldsattach_values', $field);
+			if ($this->isDuplicate($row, $fieldMap->fieldid))
+			{
+				$field->id = $this->isDuplicate($row, $fieldMap->fieldid);
+				$this->db->updateObject('#__fieldsattach_values', $field, 'id');
+			}
+			else
+			{
+				$this->db->insertObject('#__fieldsattach_values', $field);
+			}
 		}
 	}
 
@@ -229,58 +241,6 @@ class UpdateFieldsCli extends JApplicationCli
 	public function readCSVFile($fileName)
 	{
 		return array_map('str_getcsv', file($fileName));
-	}
-
-	/**
-	 * Saves each non-duplicated item as a Joomla article
-	 *
-	 * @param $xml
-	 * @param $catId
-	 */
-	private function saveItem($item)
-	{
-
-		if (!$this->isDuplicate($item))
-		{
-
-			$date                  = JFactory::getDate();
-			$article               = JTable::getInstance('content', 'JTable');
-			$article->access       = 1;
-			$article->alias        = JFilterOutput::stringURLSafe($item[$this->columnMap->name]);
-			$article->catid        = $this->getCategoryId($item[$this->columnMap->office]);
-			$article->created      = $date->toSQL();
-			$article->created_by   = $this->getAdminId();
-			$article->introtext    = '';
-			$article->language     = '*';
-			$article->metadata     = '{"robots":"","author":"","rights":"","xreference":"","tags":null}';
-			$article->publish_up   = JFactory::getDate()->toSql();
-			$article->publish_down = $this->db->getNullDate();
-			$article->state        = 1;
-			$article->title        = $item[$this->columnMap->name];
-
-			try
-			{
-				$article->check();
-			} catch (RuntimeException $e)
-			{
-				$this->out($e->getMessage(), true);
-				$this->close($e->getCode());
-			}
-
-			try
-			{
-				$article->store(true);
-			} catch (RuntimeException $e)
-			{
-				$this->out($e->getMessage(), true);
-				$this->close($e->getCode());
-			}
-
-			if ($this->input->get('fieldsMap'))
-			{
-				$this->insertFieldsattachValues($article->id, $item);
-			}
-		}
 	}
 }
 
