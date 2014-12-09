@@ -100,6 +100,24 @@ class UpdateFieldsCli extends JApplicationCli
 	}
 
 	/**
+	 *
+	 * @param $string
+	 *
+	 * @return mixed|string
+	 */
+	private function camelCase($string)
+	{
+		// Make sure that all words are upper case, but other letters lower
+		$str = ucwords(strtolower($string));
+		// Remove any duplicate whitespace, and ensure all characters are alphanumeric
+		$str = preg_replace('/[^A-Za-z0-9]/', '', $str);
+		// Trim whitespace and lower case first String
+		$str = trim(lcfirst($str));
+
+		return $str;
+	}
+
+	/**
 	 * Checks if an article already exists based on the article alias derived from the column "name"
 	 *
 	 * @param $article
