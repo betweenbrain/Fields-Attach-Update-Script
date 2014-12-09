@@ -118,26 +118,6 @@ class UpdateFieldsCli extends JApplicationCli
 	}
 
 	/**
-	 * Checks if an article already exists based on the article alias derived from the column "name"
-	 *
-	 * @param $article
-	 *
-	 * @return bool
-	 */
-	private function isDuplicate($item)
-	{
-		$query = $this->db->getQuery(true);
-		$query
-			->select($this->db->quoteName('id'))
-			->from($this->db->quoteName('#__fieldsattach_values'))
-			->where($this->db->quoteName('articleid') . ' = ' . $this->db->quote($item[$this->columnMap->articleId]))
-			->where($this->db->quoteName('fieldsid') . ' = ' . $this->db->quote($item[$this->columnMap->articleId]));
-		$this->db->setQuery($query);
-
-		return $this->db->loadResult() ? true : false;
-	}
-
-	/**
 	 * Entry point for CLI script
 	 *
 	 * @return  void
@@ -159,6 +139,26 @@ class UpdateFieldsCli extends JApplicationCli
 		$this->out(print_r($this->fieldsMap, true));
 
 		$this->out(JProfiler::getInstance('Application')->mark('Finished script.'));
+	}
+
+	/**
+	 * Checks if an article already exists based on the article alias derived from the column "name"
+	 *
+	 * @param $article
+	 *
+	 * @return bool
+	 */
+	private function isDuplicate($item)
+	{
+		$query = $this->db->getQuery(true);
+		$query
+			->select($this->db->quoteName('id'))
+			->from($this->db->quoteName('#__fieldsattach_values'))
+			->where($this->db->quoteName('articleid') . ' = ' . $this->db->quote($item[$this->columnMap->articleId]))
+			->where($this->db->quoteName('fieldsid') . ' = ' . $this->db->quote($item[$this->columnMap->articleId]));
+		$this->db->setQuery($query);
+
+		return $this->db->loadResult() ? true : false;
 	}
 
 	/**
