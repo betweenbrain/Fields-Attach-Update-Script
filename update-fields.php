@@ -136,7 +136,7 @@ class UpdateFieldsCli extends JApplicationCli
 		}
 		*/
 
-		$this->out(print_r($this->fieldsMap, true));
+		$this->out(print_r($this->columnMap, true));
 
 		$this->out(JProfiler::getInstance('Application')->mark('Finished script.'));
 	}
@@ -193,7 +193,7 @@ class UpdateFieldsCli extends JApplicationCli
 
 		foreach ($csvfile[0] as $key => $value)
 		{
-			$return->{strtolower($value)} = $key;
+			$return->{$this->camelCase($value)} = $key;
 		}
 
 		return $return;
@@ -215,7 +215,7 @@ class UpdateFieldsCli extends JApplicationCli
 
 			foreach ($fieldsHeader as $key => $value)
 			{
-				$fieldMap->{strtolower($key)} = strtolower($field[$value]);
+				$fieldMap->{$this->camelCase($key)} = $this->camelCase($field[$value]);
 			}
 			$this->fieldsMap[] = $fieldMap;
 		}
