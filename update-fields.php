@@ -79,10 +79,17 @@ class UpdateFieldsCli extends JApplicationCli
 		// Set JFactory::$application object to avoid system using incorrect defaults
 		JFactory::$application = $this;
 
-		if (!$this->input->get('file'))
+		if (!$this->input->get('file') || !$this->input->get('fieldsMap'))
 		{
-			$this->out('You must enter the name as follows:');
-			$this->out(' --file foo.csv');
+			$this->out('This script is run as follows:');
+			$this->out('');
+			$this->out('$ php update-fields.php --file file.csv --fieldsMap fields.csv -v');
+			$this->out('');
+			$this->out('Where:');
+			$this->out('');
+			$this->out('--file [required] designates the CSV file containing data to import.');
+			$this->out('--fieldsMap [required] used to designate a fields mapping file to define the field IDs and the CSV column names they correspond to.');
+			$this->out('-v [optional] verbose output');
 			exit;
 		}
 
